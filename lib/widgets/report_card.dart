@@ -1,0 +1,147 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import '../models/sale_report.dart';
+
+class ReportCard extends StatelessWidget {
+  final SaleReport report;
+
+  const ReportCard({super.key, required this.report});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withAlpha(20)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF2ECC71).withAlpha(30),
+                    ),
+                    child: const Icon(Icons.person_outline,
+                        color: Color(0xFF2ECC71), size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        report.moderatorName,
+                        style: GoogleFonts.hindSiliguri(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14),
+                      ),
+                      Text(
+                        DateFormat('dd MMM yyyy  hh:mm a')
+                            .format(report.createdAt),
+                        style: GoogleFonts.outfit(
+                            color: Colors.white38, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2ECC71).withAlpha(30),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  DateFormat('dd MMM').format(report.date),
+                  style: GoogleFonts.outfit(
+                      color: const Color(0xFF2ECC71),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: Colors.white12, height: 1),
+          const SizedBox(height: 12),
+          // Data grid
+          _twoCol(
+            _item('পার্সেল', '${report.parcel}টি', Icons.inventory_2_outlined,
+                const Color(0xFF3498DB)),
+            _item('সেল', '৳${report.sale.toStringAsFixed(0)}',
+                Icons.attach_money, const Color(0xFF2ECC71)),
+          ),
+          const SizedBox(height: 8),
+          _twoCol(
+            _item('বিকাশ', '৳${report.bkash.toStringAsFixed(0)}',
+                Icons.phone_android, const Color(0xFFE91E8C)),
+            _item('নগদ', '৳${report.nagad.toStringAsFixed(0)}',
+                Icons.account_balance_wallet, const Color(0xFFFF6B35)),
+          ),
+          const SizedBox(height: 8),
+          _twoCol(
+            _item('App চার্জ', '৳${report.appCharge.toStringAsFixed(0)}',
+                Icons.apps, const Color(0xFF9B59B6)),
+            _item('রিটার্ন', '${report.returns}টি',
+                Icons.assignment_return, const Color(0xFFE74C3C)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _twoCol(Widget left, Widget right) {
+    return Row(
+      children: [
+        Expanded(child: left),
+        const SizedBox(width: 8),
+        Expanded(child: right),
+      ],
+    );
+  }
+
+  Widget _item(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withAlpha(20),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: GoogleFonts.hindSiliguri(
+                        color: Colors.white54, fontSize: 10)),
+                Text(value,
+                    style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

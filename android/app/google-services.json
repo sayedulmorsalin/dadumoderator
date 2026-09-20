@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "903789237358",
+    "project_id": "dadumodaretor",
+    "storage_bucket": "dadumodaretor.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:903789237358:android:666e33ec693d62e43b027f",
+        "android_client_info": {
+          "package_name": "com.sayedulmarsalin.dadumodaretor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwo-zL3Zmji06w6niGHaRgxEiZisXZa20"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
