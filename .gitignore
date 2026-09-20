@@ -1,9 +1,92 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
+# -----------------------------------------------------------------------------
+# Flutter & Dart
+# -----------------------------------------------------------------------------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+/coverage/
+**/doc/api/
+
+# Symbolication & Obfuscation
+app.*.symbols
+app.*.map.json
+
+# -----------------------------------------------------------------------------
+# Android
+# -----------------------------------------------------------------------------
+**/android/.gradle/
+**/.kotlin/
+**/android/captures/
+**/android/gradle-wrapper.jar
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/.cxx/
+
+# Android Studio / Gradle build outputs
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+*.apk
+*.aab
+
+# Signing keys and credentials (never commit sensitive keys)
+key.properties
+**/*.keystore
+**/*.jks
+
+# -----------------------------------------------------------------------------
+# iOS & macOS
+# -----------------------------------------------------------------------------
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/.symlinks/
+**/ios/Pods/
+**/ios/profile
+**/ios/debug
+**/ios/release
+
+**/macos/Flutter/ephemeral/
+**/macos/Pods/
+**/macos/.symlinks/
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# -----------------------------------------------------------------------------
+# Desktop (Windows & Linux)
+# -----------------------------------------------------------------------------
+**/windows/flutter/ephemeral/
+**/linux/flutter/ephemeral/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# -----------------------------------------------------------------------------
+# IDEs and Editors
+# -----------------------------------------------------------------------------
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+.vscode/
+
+# Other editors
 *.swp
-.DS_Store
+*.bak
+*~
 .atom/
 .build/
 .buildlog/
@@ -12,34 +95,33 @@
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
+# -----------------------------------------------------------------------------
+# Environment & Secrets
+# -----------------------------------------------------------------------------
+.env
+.env.*
+*.env
+# (Uncomment below if you wish to keep google-services.json out of git)
+# android/app/google-services.json
+# ios/Runner/GoogleService-Info.plist
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# -----------------------------------------------------------------------------
+# Operating System files
+# -----------------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
-/coverage/
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# Linux
+.directory
+.Trash-*
