@@ -14,6 +14,7 @@ class SaleReport {
   final double commission; // editable by both admin and moderator
   final double extra; // admin-only: positive = bonus, negative = fine
   final String extraType; // 'bonus', 'fine', or 'none'
+  final String extraNote; // admin note for bonus/fine
   final DateTime createdAt;
 
   SaleReport({
@@ -30,6 +31,7 @@ class SaleReport {
     this.commission = 0,
     this.extra = 0,
     this.extraType = 'none',
+    this.extraNote = '',
     required this.createdAt,
   });
 
@@ -52,6 +54,7 @@ class SaleReport {
       'commission': commission,
       'extra': extra,
       'extraType': extraType,
+      'extraNote': extraNote,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -71,6 +74,7 @@ class SaleReport {
       commission: (map['commission'] ?? 0).toDouble(),
       extra: (map['extra'] ?? 0).toDouble(),
       extraType: map['extraType'] ?? 'none',
+      extraNote: map['extraNote'] ?? '',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
     );
   }
@@ -89,6 +93,7 @@ class SaleReport {
     double? commission,
     double? extra,
     String? extraType,
+    String? extraNote,
     DateTime? createdAt,
   }) {
     return SaleReport(
@@ -105,6 +110,7 @@ class SaleReport {
       commission: commission ?? this.commission,
       extra: extra ?? this.extra,
       extraType: extraType ?? this.extraType,
+      extraNote: extraNote ?? this.extraNote,
       createdAt: createdAt ?? this.createdAt,
     );
   }

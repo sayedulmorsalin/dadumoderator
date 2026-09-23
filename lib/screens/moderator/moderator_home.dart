@@ -700,14 +700,31 @@ class _ReportTab extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              report.extraType == 'bonus'
-                                  ? 'বোনাস: ৳${report.extra.abs().toStringAsFixed(0)} (শুধু অ্যাডমিন পরিবর্তন করতে পারবেন)'
-                                  : 'জরিমানা: ৳${report.extra.abs().toStringAsFixed(0)} (শুধু অ্যাডমিন পরিবর্তন করতে পারবেন)',
-                              style: GoogleFonts.hindSiliguri(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  report.extraType == 'bonus'
+                                      ? 'বোনাস: ৳${report.extra.abs().toStringAsFixed(0)} (শুধু অ্যাডমিন পরিবর্তন করতে পারবেন)'
+                                      : 'জরিমানা: ৳${report.extra.abs().toStringAsFixed(0)} (শুধু অ্যাডমিন পরিবর্তন করতে পারবেন)',
+                                  style: GoogleFonts.hindSiliguri(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                if (report.extraNote.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'নোট: ${report.extraNote}',
+                                    style: GoogleFonts.hindSiliguri(
+                                      color: (report.extraType == 'bonus'
+                                          ? const Color(0xFFF1C40F)
+                                          : const Color(0xFFE74C3C)),
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         ],
@@ -739,6 +756,7 @@ class _ReportTab extends StatelessWidget {
                               report.commission,
                           extra: report.extra,
                           extraType: report.extraType,
+                          extraNote: report.extraNote,
                         );
                         Navigator.pop(ctx);
                         final messenger = ScaffoldMessenger.of(context);
@@ -846,15 +864,24 @@ class _WalletTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Wallet balance card
+          // Wallet balance card and inline payout request section
           StreamBuilder<Wallet?>(
             stream: wp.getWallet(uid),
             builder: (ctx, snap) {
               final wallet = snap.data;
-              return _WalletBalanceCard(
-                wallet: wallet,
-                isLoading: snap.connectionState == ConnectionState.waiting,
-                onRequestPayout: () => _showPayoutDialog(context, wallet, wp),
+              return Column(
+                children: [
+                  _WalletBalanceCard(
+                    wallet: wallet,
+                    isLoading: snap.connectionState == ConnectionState.waiting,
+                  ),
+                  const SizedBox(height: 16),
+                  _PayoutRequestSection(
+                    wallet: wallet,
+                    uid: uid,
+                    moderatorName: moderatorName,
+                  ),
+                ],
               );
             },
           ),
@@ -898,14 +925,46 @@ class _WalletTab extends StatelessWidget {
       ),
     );
   }
+}
 
-  Future<void> _showPayoutDialog(
-      BuildContext context, Wallet? wallet, WalletProvider wp) async {
-    if (wallet == null || wallet.balance <= 0) {
+// ─── Inline Payout Request Section ────────────────────────────────────────────
+
+class _PayoutRequestSection extends StatefulWidget {
+  final Wallet? wallet;
+  final String uid;
+  final String moderatorName;
+
+  const _PayoutRequestSection({
+    required this.wallet,
+    required this.uid,
+    required this.moderatorName,
+  });
+
+  @override
+  State<_PayoutRequestSection> createState() => _PayoutRequestSectionState();
+}
+
+class _PayoutRequestSectionState extends State<_PayoutRequestSection> {
+  final _amountCtrl = TextEditingController();
+  final _noteCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _amountCtrl.dispose();
+    _noteCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit(WalletProvider wp) async {
+    final balance = widget.wallet?.balance ?? 0.0;
+    if (balance <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('উইথড্র করার মতো পর্যাপ্ত ব্যালেন্স নেই।',
-              style: GoogleFonts.hindSiliguri(color: Colors.white)),
+          content: Text(
+            'উইথড্র করার মতো পর্যাপ্ত ব্যালেন্স নেই।',
+            style: GoogleFonts.hindSiliguri(color: Colors.white),
+          ),
           backgroundColor: const Color(0xFFE74C3C),
           behavior: SnackBarBehavior.floating,
         ),
@@ -913,133 +972,301 @@ class _WalletTab extends StatelessWidget {
       return;
     }
 
-    final amountCtrl = TextEditingController();
-    final noteCtrl = TextEditingController();
-    final formKey = GlobalKey<FormState>();
+    if (!_formKey.currentState!.validate()) return;
+    final amount = double.tryParse(_amountCtrl.text.trim()) ?? 0.0;
+    if (amount > balance) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'পরিমাণ আপনার ব্যালেন্স (৳${balance.toStringAsFixed(2)}) এর বেশি হতে পারবে না।',
+            style: GoogleFonts.hindSiliguri(color: Colors.white),
+          ),
+          backgroundColor: const Color(0xFFE74C3C),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF1B2A3B),
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            left: 20, right: 20, top: 24),
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('পেআউট রিকোয়েস্ট',
-                  style: GoogleFonts.hindSiliguri(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(
-                'বর্তমান ব্যালেন্স: ৳${wallet.balance.toStringAsFixed(2)}',
-                style: GoogleFonts.hindSiliguri(
-                    color: const Color(0xFF2ECC71), fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: amountCtrl,
-                keyboardType: TextInputType.number,
-                style: GoogleFonts.hindSiliguri(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: 'পরিমাণ (৳)',
-                  labelStyle: GoogleFonts.hindSiliguri(color: Colors.white54),
-                  prefixIcon: const Icon(Icons.monetization_on_outlined,
-                      color: Colors.white38),
-                  filled: true,
-                  fillColor: Colors.white.withAlpha(8),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.white.withAlpha(25))),
-                  enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.white.withAlpha(25))),
-                  focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Color(0xFF2ECC71))),
-                ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'পরিমাণ লিখুন';
-                  final amount = double.tryParse(v);
-                  if (amount == null || amount <= 0) return 'সঠিক পরিমাণ লিখুন';
-                  if (amount > wallet.balance) return 'ব্যালেন্সের বেশি নয়';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: noteCtrl,
-                style: GoogleFonts.hindSiliguri(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: 'নোট (ঐচ্ছিক)',
-                  labelStyle: GoogleFonts.hindSiliguri(color: Colors.white54),
-                  prefixIcon: const Icon(Icons.note_outlined, color: Colors.white38),
-                  filled: true,
-                  fillColor: Colors.white.withAlpha(8),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.white.withAlpha(25))),
-                  enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.white.withAlpha(25))),
-                  focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Color(0xFF2ECC71))),
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    if (!formKey.currentState!.validate()) return;
-                    Navigator.pop(ctx);
-                    final success = await wp.requestPayout(
-                      moderatorId: uid,
-                      moderatorName: moderatorName,
-                      amount: double.parse(amountCtrl.text),
-                      note: noteCtrl.text,
-                    );
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          success
-                              ? '✅ পেআউট রিকোয়েস্ট পাঠানো হয়েছে!'
-                              : wp.error ?? 'ত্রুটি হয়েছে।',
-                          style: GoogleFonts.hindSiliguri(color: Colors.white),
-                        ),
-                        backgroundColor: success
-                            ? const Color(0xFF27AE60)
-                            : const Color(0xFFE74C3C),
-                        behavior: SnackBarBehavior.floating,
+    FocusScope.of(context).unfocus();
+    final success = await wp.requestPayout(
+      moderatorId: widget.uid,
+      moderatorName: widget.moderatorName,
+      amount: amount,
+      note: _noteCtrl.text.trim(),
+    );
+
+    if (!mounted) return;
+    if (success) {
+      _amountCtrl.clear();
+      _noteCtrl.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '✅ ৳${amount.toStringAsFixed(2)} এর পেআউট রিকোয়েস্ট সফলভাবে পাঠানো হয়েছে!',
+            style: GoogleFonts.hindSiliguri(color: Colors.white),
+          ),
+          backgroundColor: const Color(0xFF27AE60),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            wp.error ?? 'পেআউট রিকোয়েস্ট পাঠানো যায়নি।',
+            style: GoogleFonts.hindSiliguri(color: Colors.white),
+          ),
+          backgroundColor: const Color(0xFFE74C3C),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final wp = context.watch<WalletProvider>();
+    final balance = widget.wallet?.balance ?? 0.0;
+    final hasBalance = balance > 0;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withAlpha(10),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withAlpha(25)),
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2ECC71).withAlpha(25),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.send_rounded, color: Colors.white),
-                  label: Text('রিকোয়েস্ট পাঠান',
+                      child: const Icon(Icons.send_rounded,
+                          color: Color(0xFF2ECC71), size: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'পেআউট রিকোয়েস্ট',
                       style: GoogleFonts.hindSiliguri(
-                          fontSize: 15, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2ECC71),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: hasBalance
+                        ? const Color(0xFF2ECC71).withAlpha(25)
+                        : Colors.white10,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: hasBalance
+                          ? const Color(0xFF2ECC71).withAlpha(60)
+                          : Colors.white24,
+                    ),
+                  ),
+                  child: Text(
+                    'ব্যালেন্স: ৳${balance.toStringAsFixed(2)}',
+                    style: GoogleFonts.outfit(
+                      color: hasBalance
+                          ? const Color(0xFF2ECC71)
+                          : Colors.white54,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'আপনার ব্যালেন্সের মধ্যে যেকোনো পরিমাণ লিখে পেআউট রিকোয়েস্ট পাঠান:',
+              style: GoogleFonts.hindSiliguri(
+                color: Colors.white54,
+                fontSize: 12,
               ),
-              const SizedBox(height: 24),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+            // Amount Input Field (constrained under balance)
+            TextFormField(
+              controller: _amountCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+              decoration: InputDecoration(
+                labelText: 'উত্তোলনের পরিমাণ (৳)',
+                hintText: 'যেমন: 500',
+                hintStyle:
+                    const TextStyle(color: Colors.white24, fontSize: 13),
+                labelStyle:
+                    GoogleFonts.hindSiliguri(color: Colors.white60),
+                prefixIcon: const Icon(Icons.monetization_on_outlined,
+                    color: Color(0xFF2ECC71), size: 20),
+                suffixIcon: hasBalance
+                    ? Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: TextButton(
+                          onPressed: () {
+                            _amountCtrl.text = balance % 1 == 0
+                                ? balance.toInt().toString()
+                                : balance.toStringAsFixed(2);
+                          },
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(
+                            'সব ব্যালেন্স',
+                            style: GoogleFonts.hindSiliguri(
+                              color: const Color(0xFF2ECC71),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      )
+                    : null,
+                helperText:
+                    'পরিমাণ অবশ্যই বর্তমান ব্যালেন্স (৳${balance.toStringAsFixed(2)}) এর নিচে বা সমান হতে হবে',
+                helperStyle: GoogleFonts.hindSiliguri(
+                  color: Colors.white38,
+                  fontSize: 11,
+                ),
+                filled: true,
+                fillColor: Colors.white.withAlpha(8),
+                contentPadding: const EdgeInsets.symmetric(
+                    vertical: 14, horizontal: 12),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white.withAlpha(25)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                      color: Color(0xFF2ECC71), width: 1.5),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE74C3C)),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                      color: Color(0xFFE74C3C), width: 1.5),
+                ),
+                errorStyle: const TextStyle(
+                    color: Color(0xFFE74C3C), fontSize: 11),
+              ),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'পরিমাণ লিখুন';
+                final amt = double.tryParse(v.trim());
+                if (amt == null || amt <= 0) return 'সঠিক পরিমাণ লিখুন';
+                if (amt > balance) {
+                  return 'ব্যালেন্সের বেশি নয় (সর্বোচ্চ ৳${balance.toStringAsFixed(2)})';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            // Note Field
+            TextFormField(
+              controller: _noteCtrl,
+              style:
+                  GoogleFonts.hindSiliguri(color: Colors.white, fontSize: 13),
+              decoration: InputDecoration(
+                labelText: 'নোট বা পেমেন্ট মাধ্যম (ঐচ্ছিক)',
+                hintText: 'যেমন: বিকাশ/নগদ 017xxxxxxxx',
+                hintStyle:
+                    const TextStyle(color: Colors.white24, fontSize: 12),
+                labelStyle:
+                    GoogleFonts.hindSiliguri(color: Colors.white60),
+                prefixIcon: const Icon(Icons.note_alt_outlined,
+                    color: Colors.white38, size: 18),
+                filled: true,
+                fillColor: Colors.white.withAlpha(8),
+                contentPadding: const EdgeInsets.symmetric(
+                    vertical: 12, horizontal: 12),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white.withAlpha(25)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                      color: Color(0xFF2ECC71), width: 1.5),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Submit Button
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed:
+                    (!hasBalance || wp.isLoading) ? null : () => _submit(wp),
+                icon: wp.isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.send_rounded,
+                        color: Colors.white, size: 18),
+                label: Text(
+                  wp.isLoading
+                      ? 'পাঠানো হচ্ছে...'
+                      : (hasBalance
+                          ? 'পেআউট রিকোয়েস্ট পাঠান'
+                          : 'উইথড্র করার মতো ব্যালেন্স নেই'),
+                  style: GoogleFonts.hindSiliguri(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2ECC71),
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.white12,
+                  disabledForegroundColor: Colors.white38,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: hasBalance ? 4 : 0,
+                  shadowColor: const Color(0xFF2ECC71).withAlpha(80),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1049,12 +1276,10 @@ class _WalletTab extends StatelessWidget {
 class _WalletBalanceCard extends StatelessWidget {
   final Wallet? wallet;
   final bool isLoading;
-  final VoidCallback onRequestPayout;
 
   const _WalletBalanceCard({
     required this.wallet,
     required this.isLoading,
-    required this.onRequestPayout,
   });
 
   @override
@@ -1116,25 +1341,6 @@ class _WalletBalanceCard extends StatelessWidget {
                         '৳${(wallet?.totalWithdrawn ?? 0).toStringAsFixed(0)}',
                         const Color(0xFFFF6B35)),
                   ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: onRequestPayout,
-                    icon: const Icon(Icons.send_rounded,
-                        size: 16, color: Colors.white),
-                    label: Text('পেআউট রিকোয়েস্ট করুন',
-                        style: GoogleFonts.hindSiliguri(
-                            fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2ECC71),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
                 ),
               ],
             ),
@@ -1316,7 +1522,7 @@ class _ModeratorReportCard extends StatelessWidget {
           _row('রিটার্ন', '${report.returns}টি', Icons.assignment_return),
           _row('কমিশন', '৳${report.commission.toStringAsFixed(0)}', Icons.monetization_on_outlined,
               valueColor: const Color(0xFF2ECC71)),
-          if (report.extraType != 'none')
+          if (report.extraType != 'none') ...[
             _row(
               report.extraType == 'bonus' ? '🎁 বোনাস' : '⚠️ জরিমানা',
               '৳${report.extra.abs().toStringAsFixed(0)}',
@@ -1327,6 +1533,50 @@ class _ModeratorReportCard extends StatelessWidget {
                   ? const Color(0xFFF1C40F)
                   : const Color(0xFFE74C3C),
             ),
+            if (report.extraNote.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: (report.extraType == 'bonus'
+                          ? const Color(0xFFF1C40F)
+                          : const Color(0xFFE74C3C))
+                      .withAlpha(15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: (report.extraType == 'bonus'
+                            ? const Color(0xFFF1C40F)
+                            : const Color(0xFFE74C3C))
+                        .withAlpha(40),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 13,
+                      color: report.extraType == 'bonus'
+                          ? const Color(0xFFF1C40F)
+                          : const Color(0xFFE74C3C),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'অ্যাডমিন নোট: ${report.extraNote}',
+                        style: GoogleFonts.hindSiliguri(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         ],
       ),
     );

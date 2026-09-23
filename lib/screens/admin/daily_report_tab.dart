@@ -54,6 +54,7 @@ class _DailyReportTabState extends State<DailyReportTab> {
         TextEditingController(text: report.commission.toStringAsFixed(0));
     final extraCtrl = TextEditingController(
         text: report.extra.abs().toStringAsFixed(0));
+    final extraNoteCtrl = TextEditingController(text: report.extraNote);
     String extraType = report.extraType == 'none' ? 'none' : report.extraType;
     final formKey = GlobalKey<FormState>();
 
@@ -171,6 +172,36 @@ class _DailyReportTabState extends State<DailyReportTab> {
                           const SizedBox(height: 10),
                           _editField(extraCtrl, 'পরিমাণ (৳)',
                               Icons.currency_exchange),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: extraNoteCtrl,
+                            style: GoogleFonts.hindSiliguri(
+                                color: Colors.white, fontSize: 13),
+                            decoration: InputDecoration(
+                              labelText: extraType == 'bonus'
+                                  ? 'বোনাসের কারণ / নোট'
+                                  : 'জরিমানার কারণ / নোট',
+                              hintText: 'মডারেটর এই নোটটি দেখতে পাবেন',
+                              hintStyle: const TextStyle(
+                                  color: Colors.white24, fontSize: 11),
+                              labelStyle: GoogleFonts.hindSiliguri(
+                                  color: Colors.white60, fontSize: 11),
+                              prefixIcon: const Icon(Icons.comment_outlined,
+                                  color: Colors.white38, size: 16),
+                              filled: true,
+                              fillColor: Colors.white.withAlpha(8),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 10),
+                              enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide(
+                                      color: Colors.white.withAlpha(25))),
+                              focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(
+                                      color: Color(0xFFF39C12))),
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -205,6 +236,9 @@ class _DailyReportTabState extends State<DailyReportTab> {
                               report.commission,
                           extra: extraVal,
                           extraType: extraType,
+                          extraNote: extraType == 'none'
+                              ? ''
+                              : extraNoteCtrl.text.trim(),
                         );
                         Navigator.pop(ctx);
                         final messenger = ScaffoldMessenger.of(context);

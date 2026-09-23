@@ -144,6 +144,44 @@ class ReportCard extends StatelessWidget {
               _item('এক্সট্রা', '—',
                   Icons.add_circle_outline, Colors.white24),
             ),
+          if (report.extraType != 'none' && report.extraNote.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: (report.extraType == 'bonus'
+                        ? const Color(0xFFF1C40F)
+                        : const Color(0xFFE74C3C))
+                    .withAlpha(15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: (report.extraType == 'bonus'
+                          ? const Color(0xFFF1C40F)
+                          : const Color(0xFFE74C3C))
+                      .withAlpha(40),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.notes_rounded,
+                      size: 13,
+                      color: report.extraType == 'bonus'
+                          ? const Color(0xFFF1C40F)
+                          : const Color(0xFFE74C3C)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'নোট: ${report.extraNote}',
+                      style: GoogleFonts.hindSiliguri(
+                        color: Colors.white70,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
