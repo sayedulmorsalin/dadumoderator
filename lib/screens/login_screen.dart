@@ -19,7 +19,6 @@ class _LoginScreenState extends State<LoginScreen>
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _isRegister = false;
-  String _selectedRole = 'moderator'; // 'moderator' or 'admin'
   bool _obscure = true;
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
@@ -54,8 +53,8 @@ class _LoginScreenState extends State<LoginScreen>
       success = await auth.register(
         email: email,
         password: pass,
-        name: name.isEmpty ? (_selectedRole == 'admin' ? 'Admin' : 'Moderator') : name,
-        role: _selectedRole,
+        name: name.isEmpty ? 'মডারেটর' : name,
+        role: 'moderator',
       );
     } else {
       success = await auth.signIn(email, pass);
@@ -148,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen>
                       const SizedBox(height: 4),
                       Text(
                         _isRegister
-                            ? 'নতুন অ্যাকাউন্ট তৈরি করুন'
+                            ? 'নতুন মডারেটর অ্যাকাউন্ট তৈরি করুন'
                             : 'আপনার অ্যাকাউন্টে লগইন করুন',
                         style: GoogleFonts.hindSiliguri(
                           fontSize: 13,
@@ -212,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         ),
                                         alignment: Alignment.center,
                                         child: Text(
-                                          'নতুন অ্যাকাউন্ট',
+                                          'নতুন মডারেটর',
                                           style: GoogleFonts.hindSiliguri(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
@@ -232,60 +231,13 @@ class _LoginScreenState extends State<LoginScreen>
                                 controller: _nameCtrl,
                                 style: const TextStyle(color: Colors.white),
                                 decoration: _inputDecoration(
-                                    'ব্যবহারকারীর নাম', Icons.person_outline),
+                                    'মডারেটরের নাম', Icons.person_outline),
                                 validator: (v) {
                                   if (_isRegister && (v == null || v.isEmpty)) {
                                     return 'নাম লিখুন';
                                   }
                                   return null;
                                 },
-                              ),
-                              const SizedBox(height: 14),
-                              // Role selection
-                              Row(
-                                children: [
-                                  Text(
-                                    'রোল নির্বাচন করুন:',
-                                    style: GoogleFonts.hindSiliguri(
-                                      color: Colors.white70,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  ChoiceChip(
-                                    label: Text(
-                                      'মডারেটর',
-                                      style: GoogleFonts.hindSiliguri(
-                                        color: _selectedRole == 'moderator'
-                                            ? Colors.white
-                                            : Colors.white60,
-                                      ),
-                                    ),
-                                    selected: _selectedRole == 'moderator',
-                                    selectedColor: const Color(0xFF2ECC71),
-                                    backgroundColor: Colors.white10,
-                                    onSelected: (v) {
-                                      if (v) setState(() => _selectedRole = 'moderator');
-                                    },
-                                  ),
-                                  const SizedBox(width: 6),
-                                  ChoiceChip(
-                                    label: Text(
-                                      'এডমিন',
-                                      style: GoogleFonts.hindSiliguri(
-                                        color: _selectedRole == 'admin'
-                                            ? Colors.white
-                                            : Colors.white60,
-                                      ),
-                                    ),
-                                    selected: _selectedRole == 'admin',
-                                    selectedColor: const Color(0xFF3498DB),
-                                    backgroundColor: Colors.white10,
-                                    onSelected: (v) {
-                                      if (v) setState(() => _selectedRole = 'admin');
-                                    },
-                                  ),
-                                ],
                               ),
                               const SizedBox(height: 14),
                             ],

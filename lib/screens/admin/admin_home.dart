@@ -6,6 +6,7 @@ import '../login_screen.dart';
 import 'daily_report_tab.dart';
 import 'monthly_report_tab.dart';
 import 'yearly_report_tab.dart';
+import 'wallet_tab.dart';
 
 class AdminHome extends StatefulWidget {
   const AdminHome({super.key});
@@ -21,7 +22,7 @@ class _AdminHomeState extends State<AdminHome>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 3, vsync: this);
+    _tabCtrl = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -76,13 +77,15 @@ class _AdminHomeState extends State<AdminHome>
           labelColor: const Color(0xFF2ECC71),
           unselectedLabelColor: Colors.white38,
           labelStyle: GoogleFonts.hindSiliguri(
-              fontWeight: FontWeight.bold, fontSize: 13),
+              fontWeight: FontWeight.bold, fontSize: 11),
           unselectedLabelStyle:
-              GoogleFonts.hindSiliguri(fontSize: 12),
+              GoogleFonts.hindSiliguri(fontSize: 10),
+          isScrollable: true,
           tabs: const [
             Tab(text: 'দৈনিক', icon: Icon(Icons.today, size: 18)),
             Tab(text: 'মাসিক', icon: Icon(Icons.calendar_month, size: 18)),
             Tab(text: 'বার্ষিক', icon: Icon(Icons.bar_chart, size: 18)),
+            Tab(text: 'ওয়ালেট', icon: Icon(Icons.account_balance_wallet, size: 18)),
           ],
         ),
       ),
@@ -92,8 +95,10 @@ class _AdminHomeState extends State<AdminHome>
           DailyReportTab(),
           MonthlyReportTab(),
           YearlyReportTab(),
+          WalletTab(),
         ],
       ),
     );
   }
 }
+

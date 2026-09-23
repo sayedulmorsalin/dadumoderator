@@ -38,6 +38,23 @@ class ReportProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateReport(SaleReport report) async {
+    _isSubmitting = true;
+    _submitError = null;
+    notifyListeners();
+    try {
+      await _service.updateReport(report);
+      _isSubmitting = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isSubmitting = false;
+      _submitError = 'আপডেট ব্যর্থ হয়েছে।';
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> deleteReport(String reportId) async {
     try {
       await _service.deleteReport(reportId);
@@ -63,3 +80,4 @@ class ReportProvider extends ChangeNotifier {
     return _service.getYearlyReports(year);
   }
 }
+

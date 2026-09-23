@@ -1,21 +1,48 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/sale_report.dart';
+import 'wallet_service.dart';
 
 class ReportService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final String _collection = 'reports';
+  final WalletService _walletService = WalletService();
 
   Future<void> addReport(SaleReport report) async {
     await _db.collection(_collection).add(report.toMap());
+    // Sync wallet after adding report
+    await _walletService.syncWalletFromReports(
+        report.moderatorId, report.moderatorName);
   }
 
   Future<void> updateReport(SaleReport report) async {
     if (report.id == null) return;
     await _db.collection(_collection).doc(report.id).update(report.toMap());
+    // Sync wallet after updating report
+    await _walletService.syncWalletFromReports(
+        report.moderatorId, report.moderatorName);
+  }
+
+  /// Partial field update (used for inline edits)
+  Future<void> updateReportField(
+      String reportId, String moderatorId, String moderatorName,
+      Map<String, dynamic> fields) async {
+    await _db.collection(_collection).doc(reportId).update(fields);
+    await _walletService.syncWalletFromReports(moderatorId, moderatorName);
   }
 
   Future<void> deleteReport(String reportId) async {
+    // Get report data before deleting to sync wallet
+    final doc = await _db.collection(_collection).doc(reportId).get();
+    String moderatorId = '';
+    String moderatorName = '';
+    if (doc.exists) {
+      moderatorId = doc.data()?['moderatorId'] ?? '';
+      moderatorName = doc.data()?['moderatorName'] ?? '';
+    }
     await _db.collection(_collection).doc(reportId).delete();
+    if (moderatorId.isNotEmpty) {
+      await _walletService.syncWalletFromReports(moderatorId, moderatorName);
+    }
   }
 
   /// Reports submitted by a specific moderator
@@ -68,3 +95,4 @@ class ReportService {
     return getReportsByDateRange(start, end);
   }
 }
+

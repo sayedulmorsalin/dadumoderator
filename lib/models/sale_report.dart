@@ -11,6 +11,9 @@ class SaleReport {
   final double nagad;
   final double appCharge;
   final int returns;
+  final double commission; // editable by both admin and moderator
+  final double extra; // admin-only: positive = bonus, negative = fine
+  final String extraType; // 'bonus', 'fine', or 'none'
   final DateTime createdAt;
 
   SaleReport({
@@ -24,10 +27,16 @@ class SaleReport {
     required this.nagad,
     required this.appCharge,
     required this.returns,
+    this.commission = 0,
+    this.extra = 0,
+    this.extraType = 'none',
     required this.createdAt,
   });
 
   double get totalDeliveryCharge => bkash + nagad + appCharge;
+
+  /// Net amount added to wallet for this report
+  double get walletContribution => commission + extra;
 
   Map<String, dynamic> toMap() {
     return {
@@ -40,6 +49,9 @@ class SaleReport {
       'nagad': nagad,
       'appCharge': appCharge,
       'returns': returns,
+      'commission': commission,
+      'extra': extra,
+      'extraType': extraType,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -56,7 +68,44 @@ class SaleReport {
       nagad: (map['nagad'] ?? 0).toDouble(),
       appCharge: (map['appCharge'] ?? 0).toDouble(),
       returns: (map['returns'] ?? 0).toInt(),
+      commission: (map['commission'] ?? 0).toDouble(),
+      extra: (map['extra'] ?? 0).toDouble(),
+      extraType: map['extraType'] ?? 'none',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
+    );
+  }
+
+  SaleReport copyWith({
+    String? id,
+    DateTime? date,
+    String? moderatorId,
+    String? moderatorName,
+    int? parcel,
+    double? sale,
+    double? bkash,
+    double? nagad,
+    double? appCharge,
+    int? returns,
+    double? commission,
+    double? extra,
+    String? extraType,
+    DateTime? createdAt,
+  }) {
+    return SaleReport(
+      id: id ?? this.id,
+      date: date ?? this.date,
+      moderatorId: moderatorId ?? this.moderatorId,
+      moderatorName: moderatorName ?? this.moderatorName,
+      parcel: parcel ?? this.parcel,
+      sale: sale ?? this.sale,
+      bkash: bkash ?? this.bkash,
+      nagad: nagad ?? this.nagad,
+      appCharge: appCharge ?? this.appCharge,
+      returns: returns ?? this.returns,
+      commission: commission ?? this.commission,
+      extra: extra ?? this.extra,
+      extraType: extraType ?? this.extraType,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

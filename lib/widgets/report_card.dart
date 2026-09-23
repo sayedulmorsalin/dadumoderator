@@ -5,8 +5,9 @@ import '../models/sale_report.dart';
 
 class ReportCard extends StatelessWidget {
   final SaleReport report;
+  final VoidCallback? onEdit; // null for moderator view, set for admin
 
-  const ReportCard({super.key, required this.report});
+  const ReportCard({super.key, required this.report, this.onEdit});
 
   @override
   Widget build(BuildContext context) {
@@ -58,20 +59,39 @@ class ReportCard extends StatelessWidget {
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2ECC71).withAlpha(30),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  DateFormat('dd MMM').format(report.date),
-                  style: GoogleFonts.outfit(
-                      color: const Color(0xFF2ECC71),
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold),
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2ECC71).withAlpha(30),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      DateFormat('dd MMM').format(report.date),
+                      style: GoogleFonts.outfit(
+                          color: const Color(0xFF2ECC71),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  if (onEdit != null) ...[
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: onEdit,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3498DB).withAlpha(25),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.edit_outlined,
+                            color: Color(0xFF3498DB), size: 16),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
@@ -99,6 +119,31 @@ class ReportCard extends StatelessWidget {
             _item('রিটার্ন', '${report.returns}টি',
                 Icons.assignment_return, const Color(0xFFE74C3C)),
           ),
+          const SizedBox(height: 8),
+          // Commission and Extra row
+          if (report.commission > 0 || report.extraType != 'none')
+            _twoCol(
+              _item('কমিশন', '৳${report.commission.toStringAsFixed(0)}',
+                  Icons.monetization_on_outlined, const Color(0xFF2ECC71)),
+              report.extraType == 'bonus'
+                  ? _item('বোনাস', '৳${report.extra.abs().toStringAsFixed(0)}',
+                      Icons.star_outline, const Color(0xFFF1C40F))
+                  : report.extraType == 'fine'
+                      ? _item(
+                          'জরিমানা',
+                          '৳${report.extra.abs().toStringAsFixed(0)}',
+                          Icons.warning_amber_outlined,
+                          const Color(0xFFE74C3C))
+                      : _item('কমিশন', '৳${report.commission.toStringAsFixed(0)}',
+                          Icons.monetization_on_outlined, const Color(0xFF2ECC71)),
+            )
+          else
+            _twoCol(
+              _item('কমিশন', '৳${report.commission.toStringAsFixed(0)}',
+                  Icons.monetization_on_outlined, const Color(0xFF2ECC71)),
+              _item('এক্সট্রা', '—',
+                  Icons.add_circle_outline, Colors.white24),
+            ),
         ],
       ),
     );
@@ -145,3 +190,4 @@ class ReportCard extends StatelessWidget {
     );
   }
 }
+
