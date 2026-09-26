@@ -9,6 +9,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/report_provider.dart';
 import '../../providers/wallet_provider.dart';
 import '../login_screen.dart';
+import '../profile/moderator_profile_view.dart';
+import '../ranking/moderator_ranking_tab.dart';
 
 class ModeratorHome extends StatefulWidget {
   const ModeratorHome({super.key});
@@ -33,7 +35,7 @@ class _ModeratorHomeState extends State<ModeratorHome>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
+    _tabCtrl = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -244,7 +246,9 @@ class _ModeratorHomeState extends State<ModeratorHome>
               fontWeight: FontWeight.bold, fontSize: 13),
           tabs: const [
             Tab(text: 'রিপোর্ট', icon: Icon(Icons.edit_document, size: 18)),
+            Tab(text: 'র‍্যাংকিং', icon: Icon(Icons.emoji_events_outlined, size: 18)),
             Tab(text: 'ওয়ালেট', icon: Icon(Icons.account_balance_wallet, size: 18)),
+            Tab(text: 'প্রোফাইল', icon: Icon(Icons.person, size: 18)),
           ],
         ),
       ),
@@ -265,7 +269,14 @@ class _ModeratorHomeState extends State<ModeratorHome>
             onSubmit: _submit,
             uid: uid,
           ),
+          const ModeratorRankingTab(isAdmin: false),
           _WalletTab(uid: uid, moderatorName: auth.user?.name ?? ''),
+          ModeratorProfileView(
+            moderatorId: uid,
+            moderatorName: auth.user?.name ?? '',
+            moderatorEmail: auth.user?.email ?? '',
+            isSelfView: true,
+          ),
         ],
       ),
     );

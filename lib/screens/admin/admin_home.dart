@@ -7,6 +7,7 @@ import 'daily_report_tab.dart';
 import 'monthly_report_tab.dart';
 import 'yearly_report_tab.dart';
 import 'wallet_tab.dart';
+import '../ranking/moderator_ranking_tab.dart';
 
 class AdminHome extends StatefulWidget {
   const AdminHome({super.key});
@@ -22,7 +23,7 @@ class _AdminHomeState extends State<AdminHome>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 4, vsync: this);
+    _tabCtrl = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -162,6 +163,9 @@ class _AdminHomeState extends State<AdminHome>
             Tab(
                 text: 'ওয়ালেট',
                 icon: Icon(Icons.account_balance_wallet, size: 18)),
+            Tab(
+                text: 'র‍্যাংকিং',
+                icon: Icon(Icons.emoji_events_outlined, size: 18)),
           ],
         ),
       ),
@@ -172,6 +176,7 @@ class _AdminHomeState extends State<AdminHome>
           MonthlyReportTab(),
           YearlyReportTab(),
           WalletTab(),
+          ModeratorRankingTab(isAdmin: true),
         ],
       ),
     );

@@ -117,7 +117,8 @@ class AuthProvider extends ChangeNotifier {
     if (lower.contains('user-not-found')) {
       return 'এই ইমেইলে কোনো অ্যাকাউন্ট পাওয়া যায়নি।';
     }
-    if (lower.contains('wrong-password') || lower.contains('invalid-credential')) {
+    if (lower.contains('wrong-password') ||
+        lower.contains('invalid-credential')) {
       return 'ইমেইল বা পাসওয়ার্ড ভুল।';
     }
     if (lower.contains('invalid-email')) {
@@ -139,5 +140,13 @@ class AuthProvider extends ChangeNotifier {
       return 'অতিরিক্ত চেষ্টা করা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।';
     }
     return 'ত্রুটি: $e';
+  }
+
+  Stream<List<AppUser>> getAllModerators() {
+    return _authService.getAllModerators();
+  }
+
+  Stream<AppUser?> getUserStream(String uid) {
+    return _authService.getUserStream(uid);
   }
 }

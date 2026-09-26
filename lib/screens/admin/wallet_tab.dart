@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../models/wallet.dart';
 import '../../models/payout_request.dart';
 import '../../providers/wallet_provider.dart';
+import '../profile/moderator_profile_view.dart';
 
 class WalletTab extends StatefulWidget {
   const WalletTab({super.key});
@@ -183,6 +184,40 @@ class _WalletCard extends StatelessWidget {
                   '৳${wallet.totalWithdrawn.toStringAsFixed(0)}',
                   const Color(0xFFFF6B35)),
             ],
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ModeratorProfileScreen(
+                      moderatorId: wallet.moderatorId,
+                      moderatorName: wallet.moderatorName,
+                      moderatorEmail: '',
+                    ),
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('প্রোফাইল ও মাইলস্টোন দেখুন',
+                        style: GoogleFonts.hindSiliguri(
+                            color: const Color(0xFF3498DB),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.arrow_forward_ios_rounded,
+                        color: Color(0xFF3498DB), size: 10),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),

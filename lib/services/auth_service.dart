@@ -56,4 +56,26 @@ class AuthService {
     await _firestore.collection('users').doc(uid).set(appUser.toMap());
     return appUser;
   }
+
+  Stream<List<AppUser>> getAllModerators() {
+    return _firestore.collection('users').snapshots().map((snap) {
+      final list = <AppUser>[];
+      for (final doc in snap.docs) {
+        final data = doc.data();
+        final role = (data['role'] ?? 'moderator').toString().toLowerCase();
+        if (role == 'moderator') {
+          list.add(AppUser.fromMap(data, doc.id));
+        }
+      }
+      list.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      return list;
+    });
+  }
+
+  Stream<AppUser?> getUserStream(String uid) {
+    return _firestore.collection('users').doc(uid).snapshots().map((snap) {
+      if (!snap.exists || snap.data() == null) return null;
+      return AppUser.fromMap(snap.data()!, uid);
+    });
+  }
 }
