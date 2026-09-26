@@ -144,10 +144,16 @@ class _YearlyReportTabState extends State<YearlyReportTab> {
                             icon: Icons.account_balance_wallet,
                             color: const Color(0xFFFF6B35)),
                         StatTile(
-                            label: 'App চার্জ',
+                            label: 'রকেট',
                             value: '৳${totalApp.toStringAsFixed(0)}',
-                            icon: Icons.apps,
+                            icon: Icons.rocket_launch_outlined,
                             color: const Color(0xFF9B59B6)),
+                        StatTile(
+                            label: 'মোট ডেলিভারি চার্জ',
+                            value:
+                                '৳${(totalBkash + totalNagad + totalApp).toStringAsFixed(0)}',
+                            icon: Icons.local_shipping_outlined,
+                            color: const Color(0xFF2ECC71)),
                         StatTile(
                             label: 'মোট রিটার্ন',
                             value: '$totalReturn',

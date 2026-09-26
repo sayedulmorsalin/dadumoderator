@@ -36,6 +36,11 @@ class AuthService {
     await _auth.signOut();
   }
 
+  Future<AppUser?> updateName(String uid, String newName) async {
+    await _firestore.collection('users').doc(uid).update({'name': newName});
+    return getUserData(uid);
+  }
+
   Future<AppUser> createUser({
     required String email,
     required String password,

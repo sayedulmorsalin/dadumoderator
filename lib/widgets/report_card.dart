@@ -114,11 +114,13 @@ class ReportCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _twoCol(
-            _item('App চার্জ', '৳${report.appCharge.toStringAsFixed(0)}',
-                Icons.apps, const Color(0xFF9B59B6)),
+            _item('রকেট', '৳${report.appCharge.toStringAsFixed(0)}',
+                Icons.rocket_launch_outlined, const Color(0xFF9B59B6)),
             _item('রিটার্ন', '${report.returns}টি',
                 Icons.assignment_return, const Color(0xFFE74C3C)),
           ),
+          const SizedBox(height: 6),
+          _totalDeliveryRow(report),
           const SizedBox(height: 8),
           // Commission and Extra row
           if (report.commission > 0 || report.extraType != 'none')
@@ -197,6 +199,37 @@ class ReportCard extends StatelessWidget {
     );
   }
 
+  Widget _totalDeliveryRow(SaleReport report) {
+    final total = report.totalDeliveryCharge;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2ECC71).withAlpha(18),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF2ECC71).withAlpha(50)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.local_shipping_outlined,
+              size: 14, color: Color(0xFF2ECC71)),
+          const SizedBox(width: 6),
+          Text('মোট ডেলিভারি চার্জ',
+              style: GoogleFonts.hindSiliguri(
+                  color: const Color(0xFF2ECC71),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600)),
+          const Spacer(),
+          Text('৳${total.toStringAsFixed(0)}',
+              style: GoogleFonts.outfit(
+                  color: const Color(0xFF2ECC71),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
   Widget _item(String label, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -228,4 +261,5 @@ class ReportCard extends StatelessWidget {
     );
   }
 }
+
 

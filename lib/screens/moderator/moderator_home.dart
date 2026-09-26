@@ -126,6 +126,63 @@ class _ModeratorHomeState extends State<ModeratorHome>
     }
   }
 
+  Future<void> _showEditNameDialog(BuildContext context, AuthProvider auth) async {
+    final nameCtrl = TextEditingController(text: auth.user?.name ?? '');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1B2A3B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('নাম পরিবর্তন করুন',
+            style: GoogleFonts.hindSiliguri(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: nameCtrl,
+          style: GoogleFonts.hindSiliguri(color: Colors.white),
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: 'আপনার নাম',
+            labelStyle: GoogleFonts.hindSiliguri(color: Colors.white54),
+            prefixIcon: const Icon(Icons.person_outline, color: Colors.white38),
+            filled: true,
+            fillColor: Colors.white.withAlpha(10),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.white.withAlpha(30)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFF2ECC71), width: 1.5),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('বাতিল', style: GoogleFonts.hindSiliguri(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2ECC71)),
+            child: Text('সংরক্ষণ', style: GoogleFonts.hindSiliguri(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && nameCtrl.text.trim().isNotEmpty && mounted) {
+      // ignore: use_build_context_synchronously
+      final success = await auth.updateName(nameCtrl.text.trim());
+      if (!mounted) return;
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(success ? '✅ নাম আপডেট হয়েছে!' : 'নাম আপডেট ব্যর্থ হয়েছে।',
+            style: GoogleFonts.hindSiliguri(color: Colors.white)),
+        backgroundColor: success ? const Color(0xFF27AE60) : const Color(0xFFE74C3C),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
@@ -147,10 +204,20 @@ class _ModeratorHomeState extends State<ModeratorHome>
                 fontSize: 18,
               ),
             ),
-            Text(
-              auth.user?.name ?? '',
-              style: GoogleFonts.hindSiliguri(
-                  color: Colors.white54, fontSize: 12),
+            Row(
+              children: [
+                Text(
+                  auth.user?.name ?? '',
+                  style: GoogleFonts.hindSiliguri(
+                      color: Colors.white54, fontSize: 12),
+                ),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () => _showEditNameDialog(context, auth),
+                  child: const Icon(Icons.edit_outlined,
+                      size: 13, color: Color(0xFF2ECC71)),
+                ),
+              ],
             ),
           ],
         ),
@@ -389,9 +456,14 @@ class _ReportTab extends StatelessWidget {
                         nagadCtrl, 'নগদ (৳)', Icons.account_balance_wallet)),
                 const SizedBox(width: 8),
                 Expanded(
-                    child: _buildField(appCtrl, 'App (৳)', Icons.apps)),
+                    child: _buildField(appCtrl, 'রকেট (৳)', Icons.rocket_launch_outlined)),
               ],
             ),
+            const SizedBox(height: 8),
+            _DeliveryChargeSummary(
+                bkashCtrl: bkashCtrl,
+                nagadCtrl: nagadCtrl,
+                appCtrl: appCtrl),
             const SizedBox(height: 20),
             _sectionHeader('↩️ রিটার্ন'),
             const SizedBox(height: 12),
@@ -654,8 +726,13 @@ class _ReportTab extends StatelessWidget {
                             Icons.account_balance_wallet)),
                     const SizedBox(width: 8),
                     Expanded(
-                        child: _sheetEditField(appCtrl, 'App', Icons.apps)),
+                        child: _sheetEditField(appCtrl, 'রকেট', Icons.rocket_launch_outlined)),
                   ]),
+                  const SizedBox(height: 8),
+                  _DeliveryChargeSummary(
+                      bkashCtrl: bkashCtrl,
+                      nagadCtrl: nagadCtrl,
+                      appCtrl: appCtrl),
                   const SizedBox(height: 12),
                   _sheetSectionLabel('↩️ রিটার্ন ও 💰 কমিশন'),
                   const SizedBox(height: 8),
@@ -1518,7 +1595,8 @@ class _ModeratorReportCard extends StatelessWidget {
           _row('সেল', '৳${report.sale.toStringAsFixed(0)}', Icons.attach_money),
           _row('বিকাশ', '৳${report.bkash.toStringAsFixed(0)}', Icons.phone_android),
           _row('নগদ', '৳${report.nagad.toStringAsFixed(0)}', Icons.account_balance_wallet),
-          _row('App চার্জ', '৳${report.appCharge.toStringAsFixed(0)}', Icons.apps),
+          _row('রকেট', '৳${report.appCharge.toStringAsFixed(0)}', Icons.rocket_launch_outlined),
+          _totalDeliveryRow(report),
           _row('রিটার্ন', '${report.returns}টি', Icons.assignment_return),
           _row('কমিশন', '৳${report.commission.toStringAsFixed(0)}', Icons.monetization_on_outlined,
               valueColor: const Color(0xFF2ECC71)),
@@ -1582,6 +1660,38 @@ class _ModeratorReportCard extends StatelessWidget {
     );
   }
 
+  Widget _totalDeliveryRow(SaleReport report) {
+    final total = report.totalDeliveryCharge;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2ECC71).withAlpha(18),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFF2ECC71).withAlpha(50)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.local_shipping_outlined,
+                size: 14, color: Color(0xFF2ECC71)),
+            const SizedBox(width: 6),
+            Text('মোট ডেলিভারি চার্জ',
+                style: GoogleFonts.hindSiliguri(
+                    color: const Color(0xFF2ECC71),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600)),
+            const Spacer(),
+            Text('৳${total.toStringAsFixed(0)}',
+                style: GoogleFonts.hindSiliguri(
+                    color: const Color(0xFF2ECC71),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13)),
+          ],
+        ),
+      ),
+    );
+  }
   Widget _row(String label, String value, IconData icon,
       {Color? valueColor}) {
     return Padding(
@@ -1605,3 +1715,74 @@ class _ModeratorReportCard extends StatelessWidget {
   }
 }
 
+// --- Delivery Charge Live Summary ---
+
+class _DeliveryChargeSummary extends StatefulWidget {
+  final TextEditingController bkashCtrl;
+  final TextEditingController nagadCtrl;
+  final TextEditingController appCtrl;
+
+  const _DeliveryChargeSummary({
+    required this.bkashCtrl,
+    required this.nagadCtrl,
+    required this.appCtrl,
+  });
+
+  @override
+  State<_DeliveryChargeSummary> createState() => _DeliveryChargeSummaryState();
+}
+
+class _DeliveryChargeSummaryState extends State<_DeliveryChargeSummary> {
+  @override
+  void initState() {
+    super.initState();
+    widget.bkashCtrl.addListener(_rebuild);
+    widget.nagadCtrl.addListener(_rebuild);
+    widget.appCtrl.addListener(_rebuild);
+  }
+
+  void _rebuild() => setState(() {});
+
+  @override
+  void dispose() {
+    widget.bkashCtrl.removeListener(_rebuild);
+    widget.nagadCtrl.removeListener(_rebuild);
+    widget.appCtrl.removeListener(_rebuild);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bkash = double.tryParse(widget.bkashCtrl.text) ?? 0;
+    final nagad = double.tryParse(widget.nagadCtrl.text) ?? 0;
+    final rocket = double.tryParse(widget.appCtrl.text) ?? 0;
+    final total = bkash + nagad + rocket;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2ECC71).withAlpha(18),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF2ECC71).withAlpha(50)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.local_shipping_outlined,
+              size: 15, color: Color(0xFF2ECC71)),
+          const SizedBox(width: 8),
+          Text('মোট ডেলিভারি চার্জ',
+              style: GoogleFonts.hindSiliguri(
+                  color: const Color(0xFF2ECC71),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600)),
+          const Spacer(),
+          Text('৳${total.toStringAsFixed(0)}',
+              style: GoogleFonts.hindSiliguri(
+                  color: const Color(0xFF2ECC71),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14)),
+        ],
+      ),
+    );
+  }
+}

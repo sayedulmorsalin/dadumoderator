@@ -75,6 +75,24 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<bool> updateName(String newName) async {
+    if (_user == null) return false;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final updated = await _authService.updateName(_user!.uid, newName);
+      if (updated != null) _user = updated;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = _parseError(e.toString());
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> tryAutoLogin() async {
     await Future.microtask(() {});
     _isLoading = true;
