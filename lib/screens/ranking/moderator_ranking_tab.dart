@@ -202,12 +202,15 @@ class _ModeratorRankingTabState extends State<ModeratorRankingTab> {
                         }
                       }
 
-                      // Build ranking items
+                      // Build ranking items (based on delivered data from approved reports)
                       final List<_RankingItem> allRankings = [];
                       for (final m in modMap.values) {
-                        final reps = reportsByMod[m.id] ?? [];
-                        final sale = reps.fold<double>(0, (s, r) => s + r.sale);
-                        final parcels = reps.fold<int>(0, (s, r) => s + r.parcel);
+                        final allReps = reportsByMod[m.id] ?? [];
+                        final reps = allReps.where((r) => r.isApproved).toList();
+                        final sale = reps.fold<double>(
+                            0, (s, r) => s + r.deliveredSaleAmount);
+                        final parcels = reps.fold<int>(
+                            0, (s, r) => s + r.deliveredCount);
                         final returns = reps.fold<int>(0, (s, r) => s + r.returns);
                         final ratio = DeliveryRatioInfo(
                             delivered: parcels, returned: returns);

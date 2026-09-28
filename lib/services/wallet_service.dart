@@ -36,6 +36,8 @@ class WalletService {
 
     double totalEarned = 0;
     for (final doc in snap.docs) {
+      final status = doc.data()['status'] ?? 'pending';
+      if (status != 'approved') continue;
       final commission = (doc.data()['commission'] ?? 0).toDouble();
       final extra = (doc.data()['extra'] ?? 0).toDouble();
       totalEarned += commission + extra;

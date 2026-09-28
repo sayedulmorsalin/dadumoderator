@@ -160,34 +160,37 @@ class _ModeratorProfileViewState extends State<ModeratorProfileView> {
                 r.date.year == _selectedMonth.year &&
                 r.date.month == _selectedMonth.month).toList();
 
-            // Monthly Aggregations
-            final monthlySale =
-                monthlyReports.fold<double>(0, (sum, r) => sum + r.sale);
-            final monthlyParcel =
-                monthlyReports.fold<int>(0, (sum, r) => sum + r.parcel);
+            // Monthly Aggregations (Delivered data from approved reports)
+            final approvedMonthly =
+                monthlyReports.where((r) => r.isApproved).toList();
+            final monthlySale = approvedMonthly.fold<double>(
+                0, (sum, r) => sum + r.deliveredSaleAmount);
+            final monthlyParcel = approvedMonthly.fold<int>(
+                0, (sum, r) => sum + r.deliveredCount);
             final monthlyReturn =
-                monthlyReports.fold<int>(0, (sum, r) => sum + r.returns);
-            final monthlyCommission =
-                monthlyReports.fold<double>(0, (sum, r) => sum + r.commission);
+                approvedMonthly.fold<int>(0, (sum, r) => sum + r.returns);
+            final monthlyCommission = approvedMonthly.fold<double>(
+                0, (sum, r) => sum + r.commission);
             final monthlyBkash =
-                monthlyReports.fold<double>(0, (sum, r) => sum + r.bkash);
+                approvedMonthly.fold<double>(0, (sum, r) => sum + r.bkash);
             final monthlyNagad =
-                monthlyReports.fold<double>(0, (sum, r) => sum + r.nagad);
+                approvedMonthly.fold<double>(0, (sum, r) => sum + r.nagad);
             final monthlyApp =
-                monthlyReports.fold<double>(0, (sum, r) => sum + r.appCharge);
+                approvedMonthly.fold<double>(0, (sum, r) => sum + r.appCharge);
 
             final ratioInfo = DeliveryRatioInfo(
               delivered: monthlyParcel,
               returned: monthlyReturn,
             );
 
-            // All-Time Aggregations
-            final allTimeSale =
-                allReports.fold<double>(0, (sum, r) => sum + r.sale);
+            // All-Time Aggregations (Delivered data from approved reports)
+            final approvedAll = allReports.where((r) => r.isApproved).toList();
+            final allTimeSale = approvedAll.fold<double>(
+                0, (sum, r) => sum + r.deliveredSaleAmount);
             final allTimeParcel =
-                allReports.fold<int>(0, (sum, r) => sum + r.parcel);
+                approvedAll.fold<int>(0, (sum, r) => sum + r.deliveredCount);
             final allTimeReturn =
-                allReports.fold<int>(0, (sum, r) => sum + r.returns);
+                approvedAll.fold<int>(0, (sum, r) => sum + r.returns);
 
             return StreamBuilder<ModeratorOfMonth?>(
               stream: RankingService().getModeratorOfMonthStream(
@@ -263,7 +266,7 @@ class _ModeratorProfileViewState extends State<ModeratorProfileView> {
                     bkash: monthlyBkash,
                     nagad: monthlyNagad,
                     app: monthlyApp,
-                    reportCount: monthlyReports.length,
+                    reportCount: approvedMonthly.length,
                   ),
                   const SizedBox(height: 20),
 
@@ -272,7 +275,7 @@ class _ModeratorProfileViewState extends State<ModeratorProfileView> {
                     allTimeSale: allTimeSale,
                     allTimeParcel: allTimeParcel,
                     allTimeReturn: allTimeReturn,
-                    totalReports: allReports.length,
+                    totalReports: approvedAll.length,
                   ),
                   const SizedBox(height: 24),
 
@@ -1429,16 +1432,54 @@ class _ModeratorProfileViewState extends State<ModeratorProfileView> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'সেল: ${ProfileFormatUtils.formatMoney(r.sale)}',
-                          style: GoogleFonts.outfit(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                r.hasDeliveredData
+                                    ? 'ডেলিভার্ড সেল: ${ProfileFormatUtils.formatMoney(r.deliveredSaleAmount)}'
+                                    : 'বুকিং সেল: ${ProfileFormatUtils.formatMoney(r.sale)}',
+                                style: GoogleFonts.outfit(
+                                  color: r.hasDeliveredData
+                                      ? const Color(0xFF2ECC71)
+                                      : Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (!r.isApproved) ...[
+                              const SizedBox(width: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: (r.isPending
+                                          ? const Color(0xFFF39C12)
+                                          : const Color(0xFFE74C3C))
+                                      .withAlpha(30),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  r.isPending ? 'অপেক্ষারত' : 'বাতিল',
+                                  style: GoogleFonts.hindSiliguri(
+                                    color: r.isPending
+                                        ? const Color(0xFFF39C12)
+                                        : const Color(0xFFE74C3C),
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                         Text(
-                          'পার্সেল: ${r.parcel}টি • রিটার্ন: ${r.returns}টি',
+                          r.hasDeliveredData
+                              ? 'ডেলিভার্ড: ${r.deliveredCount}টি (বুকিং: ${r.parcel}টি) • রিটার্ন: ${r.returns}টি'
+                              : 'বুকিং পার্সেল: ${r.parcel}টি (ডেলিভারি বাকি)',
                           style: GoogleFonts.hindSiliguri(
                             color: Colors.white54,
                             fontSize: 11,

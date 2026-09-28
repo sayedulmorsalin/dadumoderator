@@ -55,6 +55,40 @@ class ReportProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> approveReport(SaleReport report) async {
+    _isSubmitting = true;
+    _submitError = null;
+    notifyListeners();
+    try {
+      await _service.approveReport(report);
+      _isSubmitting = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isSubmitting = false;
+      _submitError = 'অনুমোদন ব্যর্থ হয়েছে।';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> rejectReport(SaleReport report, {String adminNote = ''}) async {
+    _isSubmitting = true;
+    _submitError = null;
+    notifyListeners();
+    try {
+      await _service.rejectReport(report, adminNote: adminNote);
+      _isSubmitting = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isSubmitting = false;
+      _submitError = 'প্রত্যাখ্যান ব্যর্থ হয়েছে।';
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> deleteReport(String reportId) async {
     try {
       await _service.deleteReport(reportId);
@@ -80,4 +114,3 @@ class ReportProvider extends ChangeNotifier {
     return _service.getYearlyReports(year);
   }
 }
-

@@ -17,6 +17,13 @@ dependencies:
   firebase_core: ^3.9.0
   firebase_auth: ^5.4.0
   cloud_firestore: ^5.6.0
+  firebase_storage: ^12.4.0
+
+  # Image picking & compression
+  image_picker: ^1.1.2
+  flutter_image_compress: ^2.3.0
+  path: ^1.9.0
+  path_provider: ^2.1.5
 
   # State management
   provider: ^6.1.2

@@ -36,6 +36,100 @@ class _DailyReportTabState extends State<DailyReportTab> {
     if (picked != null) setState(() => _selectedDay = picked);
   }
 
+  Future<void> _approveReport(SaleReport report) async {
+    final rp = context.read<ReportProvider>();
+    final ok = await rp.approveReport(report);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        ok ? '✅ রিপোর্ট অনুমোদিত হয়েছে!' : rp.submitError ?? 'অনুমোদন ব্যর্থ হয়েছে।',
+        style: GoogleFonts.hindSiliguri(color: Colors.white),
+      ),
+      backgroundColor: ok ? const Color(0xFF27AE60) : const Color(0xFFE74C3C),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
+  }
+
+  Future<void> _rejectReport(SaleReport report) async {
+    final noteCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1B2A3B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'রিপোর্ট প্রত্যাখ্যান করুন',
+          style: GoogleFonts.hindSiliguri(
+              color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${report.moderatorName} এর রিপোর্ট প্রত্যাখ্যান করতে চান্?',
+              style: GoogleFonts.hindSiliguri(
+                  color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: noteCtrl,
+              style: GoogleFonts.hindSiliguri(color: Colors.white),
+              maxLines: 2,
+              decoration: InputDecoration(
+                labelText: 'প্রত্যাখ্যানের কারণ (এচ্ছিক)',
+                labelStyle: GoogleFonts.hindSiliguri(
+                    color: Colors.white54, fontSize: 12),
+                hintText: 'যেমন: ভুল তথ্য',
+                hintStyle:
+                    const TextStyle(color: Colors.white24, fontSize: 12),
+                filled: true,
+                fillColor: Colors.white.withAlpha(10),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.white.withAlpha(30)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(
+                      color: Color(0xFFE74C3C), width: 1.5),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('বাতিল',
+                style: GoogleFonts.hindSiliguri(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE74C3C)),
+            child: Text('প্রত্যাখ্যান',
+                style: GoogleFonts.hindSiliguri(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final rp = context.read<ReportProvider>();
+    final ok = await rp.rejectReport(report, adminNote: noteCtrl.text.trim());
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(
+        ok ? '❌ রিপোর্ট প্রত্যাখ্যাত হয়েছে।' : rp.submitError ?? 'প্রত্যাখ্যান ব্যর্থ হয়েছে।',
+        style: GoogleFonts.hindSiliguri(color: Colors.white),
+      ),
+      backgroundColor: ok ? const Color(0xFFE74C3C) : const Color(0xFF1B2A3B),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
+  }
+
   Future<void> _showEditSheet(SaleReport report) async {
     final rp = context.read<ReportProvider>();
     final parcelCtrl =
@@ -48,6 +142,10 @@ class _DailyReportTabState extends State<DailyReportTab> {
         TextEditingController(text: report.nagad.toStringAsFixed(0));
     final appCtrl =
         TextEditingController(text: report.appCharge.toStringAsFixed(0));
+    final totalParcelCtrl = TextEditingController(
+        text: report.totalParcel > 0 ? report.totalParcel.toString() : '');
+    final totalSaleCtrl = TextEditingController(
+        text: report.totalSale > 0 ? report.totalSale.toStringAsFixed(0) : '');
     final returnCtrl =
         TextEditingController(text: report.returns.toString());
     final commCtrl =
@@ -119,6 +217,19 @@ class _DailyReportTabState extends State<DailyReportTab> {
                     const SizedBox(width: 8),
                     Expanded(
                         child: _editField(appCtrl, 'রকেট', Icons.rocket_launch_outlined)),
+                  ]),
+                  const SizedBox(height: 12),
+                  _sectionLabel('🏁 ডেলিভার্ড তথ্য (মোট পার্সেল ও মোট সেল)'),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    Expanded(
+                        child: _editField(totalParcelCtrl, 'মোট পার্সেল',
+                            Icons.local_shipping_outlined,
+                            isInt: true)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                        child: _editField(
+                            totalSaleCtrl, 'মোট সেল (৳)', Icons.payments_outlined)),
                   ]),
                   const SizedBox(height: 12),
                   Row(children: [
@@ -230,6 +341,10 @@ class _DailyReportTabState extends State<DailyReportTab> {
                               report.nagad,
                           appCharge: double.tryParse(appCtrl.text) ??
                               report.appCharge,
+                          totalParcel: int.tryParse(totalParcelCtrl.text) ??
+                              report.totalParcel,
+                          totalSale: double.tryParse(totalSaleCtrl.text) ??
+                              report.totalSale,
                           returns: int.tryParse(returnCtrl.text) ??
                               report.returns,
                           commission: double.tryParse(commCtrl.text) ??
@@ -452,12 +567,43 @@ class _DailyReportTabState extends State<DailyReportTab> {
                   reports.fold<double>(0, (s, r) => s + r.commission);
               final totalExtra =
                   reports.fold<double>(0, (s, r) => s + r.extra);
+              final pendingCount =
+                  reports.where((r) => r.isPending).length;
 
               return SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Pending badge
+                    if (pendingCount > 0) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF39C12).withAlpha(20),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color: const Color(0xFFF39C12).withAlpha(60)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.hourglass_top_rounded,
+                                color: Color(0xFFF39C12), size: 16),
+                            const SizedBox(width: 8),
+                            Text(
+                              '$pendingCount টি রিপোর্ট অনুমোদনের বাকি — নিচে থেকে দেখুন',
+                              style: GoogleFonts.hindSiliguri(
+                                  color: const Color(0xFFF39C12),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     // Summary
                     Text(
                       'সারসংক্ষেপ (${reports.length} জন মডারেটর)',
@@ -537,6 +683,12 @@ class _DailyReportTabState extends State<DailyReportTab> {
                     ...reports.map((r) => ReportCard(
                           report: r,
                           onEdit: () => _showEditSheet(r),
+                          onApprove: r.isPending
+                              ? () => _approveReport(r)
+                              : null,
+                          onReject: r.isPending
+                              ? () => _rejectReport(r)
+                              : null,
                         )),
                     const SizedBox(height: 16),
                   ],
@@ -549,3 +701,4 @@ class _DailyReportTabState extends State<DailyReportTab> {
     );
   }
 }
+

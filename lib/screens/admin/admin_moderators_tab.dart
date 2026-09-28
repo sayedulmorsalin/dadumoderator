@@ -208,10 +208,14 @@ class _AdminModeratorsTabState extends State<AdminModeratorsTab> {
                             m.email.toLowerCase().contains(_searchQuery)).toList();
                       }
 
-                      // Sort by total sale of this month descending
+                      // Sort by total delivered sale of this month descending
                       moderators.sort((a, b) {
-                        final saleA = (reportsByMod[a.id] ?? []).fold<double>(0, (s, r) => s + r.sale);
-                        final saleB = (reportsByMod[b.id] ?? []).fold<double>(0, (s, r) => s + r.sale);
+                        final saleA = (reportsByMod[a.id] ?? [])
+                            .where((r) => r.isApproved)
+                            .fold<double>(0, (s, r) => s + r.deliveredSaleAmount);
+                        final saleB = (reportsByMod[b.id] ?? [])
+                            .where((r) => r.isApproved)
+                            .fold<double>(0, (s, r) => s + r.deliveredSaleAmount);
                         return saleB.compareTo(saleA);
                       });
 
@@ -233,13 +237,15 @@ class _AdminModeratorsTabState extends State<AdminModeratorsTab> {
                         );
                       }
 
-                      // Calculate Team Totals for summary banner
-                      final totalTeamSale =
-                          monthlyReports.fold<double>(0, (s, r) => s + r.sale);
-                      final totalTeamParcel =
-                          monthlyReports.fold<int>(0, (s, r) => s + r.parcel);
+                      // Calculate Team Totals for summary banner (Delivered data from approved reports)
+                      final approvedMonthly =
+                          monthlyReports.where((r) => r.isApproved).toList();
+                      final totalTeamSale = approvedMonthly.fold<double>(
+                          0, (s, r) => s + r.deliveredSaleAmount);
+                      final totalTeamParcel = approvedMonthly.fold<int>(
+                          0, (s, r) => s + r.deliveredCount);
                       final totalTeamReturn =
-                          monthlyReports.fold<int>(0, (s, r) => s + r.returns);
+                          approvedMonthly.fold<int>(0, (s, r) => s + r.returns);
 
                       final teamRatio = DeliveryRatioInfo(
                         delivered: totalTeamParcel,
@@ -250,7 +256,9 @@ class _AdminModeratorsTabState extends State<AdminModeratorsTab> {
                       int m2Count = 0;
                       int m3Count = 0;
                       for (final m in modMap.values) {
-                        final sale = (reportsByMod[m.id] ?? []).fold<double>(0, (s, r) => s + r.sale);
+                        final sale = (reportsByMod[m.id] ?? [])
+                            .where((r) => r.isApproved)
+                            .fold<double>(0, (s, r) => s + r.deliveredSaleAmount);
                         final level = MilestoneConstants.getHighestAchievedLevel(sale);
                         if (level >= 1) m1Count++;
                         if (level >= 2) m2Count++;
@@ -297,11 +305,16 @@ class _AdminModeratorsTabState extends State<AdminModeratorsTab> {
                           ...moderators.asMap().entries.map((entry) {
                             final rank = entry.key + 1;
                             final mod = entry.value;
-                            final reports = reportsByMod[mod.id] ?? [];
-                            final sale = reports.fold<double>(0, (s, r) => s + r.sale);
-                            final parcels = reports.fold<int>(0, (s, r) => s + r.parcel);
+                            final reports = (reportsByMod[mod.id] ?? [])
+                                .where((r) => r.isApproved)
+                                .toList();
+                            final sale = reports.fold<double>(
+                                0, (s, r) => s + r.deliveredSaleAmount);
+                            final parcels = reports.fold<int>(
+                                0, (s, r) => s + r.deliveredCount);
                             final returns = reports.fold<int>(0, (s, r) => s + r.returns);
-                            final ratio = DeliveryRatioInfo(delivered: parcels, returned: returns);
+                            final ratio = DeliveryRatioInfo(
+                                delivered: parcels, returned: returns);
 
                             return _buildModeratorCard(
                               context: context,

@@ -9,15 +9,40 @@ class ReportService {
 
   Future<void> addReport(SaleReport report) async {
     await _db.collection(_collection).add(report.toMap());
-    // Sync wallet after adding report
-    await _walletService.syncWalletFromReports(
-        report.moderatorId, report.moderatorName);
+    // Wallet sync only if approved (new reports start as 'pending')
+    if (report.status == 'approved') {
+      await _walletService.syncWalletFromReports(
+          report.moderatorId, report.moderatorName);
+    }
   }
 
   Future<void> updateReport(SaleReport report) async {
     if (report.id == null) return;
     await _db.collection(_collection).doc(report.id).update(report.toMap());
     // Sync wallet after updating report
+    await _walletService.syncWalletFromReports(
+        report.moderatorId, report.moderatorName);
+  }
+
+  /// Approve a report — sets status to 'approved' and syncs wallet
+  Future<void> approveReport(SaleReport report) async {
+    if (report.id == null) return;
+    await _db.collection(_collection).doc(report.id).update({
+      'status': 'approved',
+      'adminNote': '',
+    });
+    await _walletService.syncWalletFromReports(
+        report.moderatorId, report.moderatorName);
+  }
+
+  /// Reject a report — sets status to 'rejected' with an optional admin note
+  Future<void> rejectReport(SaleReport report, {String adminNote = ''}) async {
+    if (report.id == null) return;
+    await _db.collection(_collection).doc(report.id).update({
+      'status': 'rejected',
+      'adminNote': adminNote,
+    });
+    // Sync wallet in case it was previously approved
     await _walletService.syncWalletFromReports(
         report.moderatorId, report.moderatorName);
   }
@@ -95,4 +120,3 @@ class ReportService {
     return getReportsByDateRange(start, end);
   }
 }
-
